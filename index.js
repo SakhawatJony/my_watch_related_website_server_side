@@ -13,7 +13,25 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 
-console.log(uri)
+
+async function verifyToken(req, res, next) {
+    if (req.headers?.authorization?.startsWith('Bearer ')) {
+        const token = req.headers.authorization.split(' ')[1];
+
+        try {
+            const decodedUser = await admin.auth().verifyIdToken(token);
+            req.decodedEmail = decodedUser.email;
+        }
+        catch {
+
+        }
+
+    }
+    next();
+}
+
+
+
 
 async function run() {
     try {
@@ -26,7 +44,7 @@ async function run() {
         
 
         // shops collecton add 
-        app.get('/shops', async (req, res) => {
+        app.get('/shops', verifyToken, async (req, res) => {
             const email = req.query.email;
             const query = { email: email,}
             const cursor = watchShopCollection.find(query);
